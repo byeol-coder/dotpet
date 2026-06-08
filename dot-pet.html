@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>DOT PET · 닷패드 촉각 펫 키우기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ── reset ── */
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;}
+
+/* ── base ── */
+body{
+  font-family:'Noto Sans KR',system-ui,sans-serif;
+  background:#13100d;color:#f0e8d8;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+}
+
+/* ── 공통 버튼 ── */
+.btn{
+  cursor:pointer;font-family:'Noto Sans KR',sans-serif;
+  font-size:17px;font-weight:700;border:none;border-radius:12px;
+  padding:12px 22px;transition:transform .1s,filter .1s;
+}
+.btn:hover{filter:brightness(1.1);}
+.btn:active{transform:translateY(2px);}
+.btn:focus-visible{outline:3px solid #f0d070;outline-offset:3px;}
+.btn-primary{background:#c03818;color:#fff;}
+.btn-secondary{background:#2a2218;color:#f0e8d8;border:2px solid #5a4830;}
+.btn-green{background:#1a6636;color:#fff;}
+
+/* ── 전체 레이아웃 ── */
+.wrap{
+  width:100%;max-width:1080px;padding:16px;
+  display:flex;flex-direction:column;align-items:center;gap:0;
+}
+
+/* ── 헤더 ── */
+.top-bar{
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0 14px;
+}
+.logo-txt{
+  font-family:'Black Han Sans',sans-serif;font-size:28px;
+  color:#f0d070;letter-spacing:3px;text-shadow:0 2px 8px rgba(240,160,70,.4);
+}
+.conn-pill{
+  font-size:13px;font-weight:700;padding:4px 12px;border-radius:20px;
+  background:#2a2218;color:#888;border:2px solid #3a3020;transition:all .3s;
+}
+.conn-pill.connected{background:#1a3a28;color:#4ad080;border-color:#1a6636;}
+.conn-pill.connecting{background:#3a2a10;color:#f0b050;border-color:#8a6000;}
+
+/* ── 닷 패드 기기 ── */
+.device-wrap{
+  width:100%;
+  background:#1a1410;border:3px solid rgba(255,255,255,.06);border-radius:20px;
+  padding:14px;
+  box-shadow:0 12px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);
+}
+.device-header{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:11px;letter-spacing:2px;font-weight:700;
+  color:rgba(210,180,130,.5);margin-bottom:10px;
+}
+.dev-leds{display:flex;gap:5px;}
+.dev-leds i{width:7px;height:7px;border-radius:50%;background:rgba(200,160,100,.2);}
+.dev-leds i:nth-child(1){background:rgba(200,60,30,.6);}
+.dev-leds i:nth-child(2){background:rgba(180,120,0,.6);}
+.dev-leds i:nth-child(3){background:rgba(30,110,60,.6);}
+.pad-grid{
+  aspect-ratio:60/40;width:100%;
+  display:grid;grid-template-columns:repeat(60,1fr);grid-template-rows:repeat(40,1fr);
+  gap:clamp(1px,.18vw,2px);
+  background:rgba(0,0,0,.5);border-radius:10px;
+  padding:clamp(5px,.9vw,10px);
+  box-shadow:inset 0 2px 12px rgba(0,0,0,.7);
+}
+.dot{
+  width:100%;height:100%;border-radius:50%;
+  background:rgba(210,180,130,.18);transform:scale(.42);
+  transition:transform .1s ease,background .1s ease;
+}
+.dot.on{
+  transform:scale(1);
+  background:radial-gradient(circle at 36% 28%,#f0d070,#c89030 55%,#9a6810);
+  box-shadow:0 0 4px rgba(240,200,80,.55),0 1px 2px rgba(0,0,0,.5);
+}
+.dev-caption{
+  margin-top:8px;font-size:12px;font-weight:500;text-align:center;
+  color:rgba(210,180,130,.4);
+}
+
+/* ── 게임 하단 UI ── */
+.game-ui{
+  width:100%;padding:16px 0 0;display:none;flex-direction:column;gap:12px;
+}
+.game-ui.visible{display:flex;}
+.status-row{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;
+}
+.stat-item{background:#1e1a14;border:1.5px solid #3a3020;border-radius:12px;padding:10px 12px;}
+.stat-label{font-size:13px;font-weight:700;color:#a09070;margin-bottom:5px;}
+.stat-bar{height:12px;background:#2a2218;border-radius:6px;overflow:hidden;}
+.stat-fill{height:100%;border-radius:6px;transition:width .5s ease;}
+.stat-fill.hunger{background:#c03818;}
+.stat-fill.mood  {background:#c87000;}
+.stat-fill.energy{background:#1a6636;}
+.stat-val{font-size:14px;font-weight:700;margin-top:4px;color:#f0e8d8;}
+
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.act-btn{
+  cursor:pointer;font-family:'Noto Sans KR',sans-serif;
+  font-size:16px;font-weight:700;
+  background:#1e1a14;color:#f0e8d8;
+  border:2px solid #3a3020;border-radius:14px;
+  padding:14px 10px 12px;text-align:center;
+  transition:transform .1s,box-shadow .1s,border-color .1s;
+}
+.act-btn .emo{display:block;font-size:24px;margin-bottom:3px;}
+.act-btn .sub{display:block;font-size:12px;color:#a09070;margin-top:2px;}
+.act-btn:hover{border-color:#5a4030;background:#261f18;}
+.act-btn:active{transform:translateY(2px);}
+.act-btn:focus-visible{outline:3px solid #f0d070;outline-offset:3px;}
+.act-btn.act-feed  {border-color:#c03818;}
+.act-btn.act-stroke{border-color:#104898;}
+.act-btn.act-play  {border-color:#1a6636;}
+.act-btn.act-sleep {border-color:#8a6000;}
+.act-btn.active{filter:brightness(1.2);transform:translateY(2px);}
+
+.banner{
+  background:#1e1a14;border:2px solid #3a3020;border-radius:14px;
+  padding:12px 16px;font-size:17px;font-weight:700;
+  color:#f0d070;text-align:center;min-height:24px;
+}
+.key-hint{
+  text-align:center;font-size:13px;color:#5a5040;
+  display:flex;flex-wrap:wrap;justify-content:center;gap:6px;
+}
+.key-hint kbd{
+  background:#1e1a14;border:1.5px solid #3a3020;border-radius:5px;
+  padding:1px 7px;font-size:12px;color:#a09070;
+}
+
+/* ── 오버레이 스크린 ── */
+.overlay{
+  position:fixed;inset:0;z-index:100;
+  background:rgba(13,10,8,.92);
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .4s;
+}
+.overlay.hidden{opacity:0;pointer-events:none;}
+
+.screen-card{
+  background:#1e1a14;border:2px solid #3a3020;border-radius:24px;
+  padding:36px 32px;max-width:460px;width:90%;
+  box-shadow:0 24px 60px rgba(0,0,0,.6);
+  text-align:center;display:flex;flex-direction:column;gap:18px;
+}
+.screen-card h1{
+  font-family:'Black Han Sans',sans-serif;
+  font-size:clamp(42px,8vw,64px);
+  color:#f0d070;letter-spacing:4px;margin:0;
+  text-shadow:0 4px 16px rgba(240,160,70,.5);
+}
+.screen-card h2{font-size:24px;font-weight:700;margin:0;color:#f0e8d8;}
+.screen-card p{font-size:16px;color:#a09070;margin:0;line-height:1.6;}
+.screen-card .btn-group{display:flex;flex-direction:column;gap:10px;}
+
+/* 연결 상태 */
+.conn-status-box{
+  background:#13100d;border:2px solid #3a3020;border-radius:14px;
+  padding:14px;font-size:15px;font-weight:700;color:#a09070;
+  min-height:48px;display:flex;align-items:center;justify-content:center;
+}
+.conn-btns-row{display:flex;gap:8px;}
+.conn-btns-row .btn{flex:1;font-size:14px;padding:10px 6px;}
+.adv-toggle{
+  background:none;border:1.5px solid #3a3020;border-radius:8px;
+  font-size:13px;color:#5a5040;padding:4px 12px;cursor:pointer;
+}
+.uuid-fields{
+  display:none;flex-direction:column;gap:6px;
+  text-align:left;
+}
+.uuid-fields.open{display:flex;}
+.uuid-fields label{font-size:12px;color:#a09070;display:flex;flex-direction:column;gap:2px;}
+.uuid-fields input{
+  font-family:monospace;font-size:12px;background:#13100d;
+  border:1.5px solid #3a3020;border-radius:7px;
+  padding:5px 8px;color:#f0e8d8;
+}
+
+/* ── 스킵 링크 ── */
+.skip{
+  position:fixed;top:-80px;left:14px;z-index:9999;
+  background:#c03818;color:#fff;border:3px solid #fff;
+  border-radius:10px;padding:10px 18px;font-size:16px;
+  font-weight:700;text-decoration:none;transition:top .14s;
+}
+.skip:focus{top:12px;}
+
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;}
+
+/* ── 반응형 ── */
+@media(max-width:640px){
+  .status-row{grid-template-columns:1fr;}
+  .screen-card{padding:24px 18px;}
+}
+</style>
+</head>
+<body>
+
+<a href="#act-feed" class="skip" aria-label="게임 조작 바로 가기">조작 바로 가기</a>
+
+<!-- ── 오버레이: 오프닝 ── -->
+<div id="ov-opening" class="overlay" role="dialog" aria-labelledby="title-main" aria-modal="true">
+  <div class="screen-card">
+    <div>
+      <h1 id="title-main">DOT PET</h1>
+      <p style="font-size:14px;color:#f0d070;letter-spacing:1px;margin-top:6px;">닷 패드에서 만나는 나만의 촉각 펫</p>
+    </div>
+    <p>패닝키로 움직이고, 먹이고, 놀아주세요.<br>점자를 몰라도 손끝으로 느낄 수 있어요.</p>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="startGame()" aria-label="게임 시작하기">▶&nbsp; 시작하기</button>
+      <button class="btn btn-secondary" onclick="goConnect()" aria-label="Dot Pad 연결 화면으로 이동">🔵&nbsp; Dot Pad 연결하기</button>
+    </div>
+    <p style="font-size:13px;color:#5a5040;">키보드 방향키 · 숫자 1–4 로 조작 가능</p>
+  </div>
+</div>
+
+<!-- ── 오버레이: 연결 ── -->
+<div id="ov-connect" class="overlay hidden" role="dialog" aria-labelledby="conn-title" aria-modal="true">
+  <div class="screen-card">
+    <h2 id="conn-title">Dot Pad 연결</h2>
+    <div class="conn-status-box" id="conn-box" aria-live="polite">연결 전</div>
+    <div class="conn-btns-row">
+      <button class="btn btn-primary" id="btn-ble-connect2"
+        onclick="connectDotPad()"
+        aria-label="닷패드 블루투스 연결하기. 기기 선택 창이 열립니다.">
+        📡 블루투스로 연결하기
+      </button>
+      <button class="btn btn-secondary" id="btn-ble-disconnect2" style="display:none"
+        onclick="disconnectDotPad()"
+        aria-label="닷패드 연결 끊기">
+        ✕ 연결 끊기
+      </button>
+    </div>
+    <div class="sdk-info" style="background:#13100d;border:1.5px solid #3a3020;border-radius:10px;padding:10px 12px;font-size:13px;color:#7a6550;line-height:1.7;">
+      공식 Dot Pad Web SDK 사용<br>
+      Service: <code style="color:#c89030;font-size:11px;">49535343-fe7d-4ae5-8fa9-9fafd205e455</code><br>
+      <span style="color:#5a5040;">← 오른쪽 이동 · → 왼쪽 이동<br>F1먹이 · F2쓰다듬기 · F3놀기 · F4쉬기</span>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-green" id="btn-conn-start" onclick="startGame()" aria-label="연결 완료 후 게임 시작">→ 게임 시작</button>
+      <button class="btn btn-secondary" onclick="startGame()" aria-label="연결 없이 시작">연결 없이 시작</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 항상 보이는 게임 바탕 ── -->
+<div class="wrap">
+  <div class="top-bar">
+    <span class="logo-txt">DOT PET</span>
+    <span class="conn-pill" id="top-conn">미연결</span>
+  </div>
+
+  <!-- 닷패드 디스플레이 -->
+  <div class="device-wrap" aria-label="닷패드 촉각 디스플레이">
+    <div class="device-header" aria-hidden="true">
+      <span>DOT PAD · 60×40 TACTILE</span>
+      <span class="dev-leds"><i></i><i></i><i></i></span>
+    </div>
+    <div class="pad-grid" id="pad" role="img" aria-label="닷패드 촉각 그래픽 미리보기"></div>
+    <div class="dev-caption" aria-hidden="true">실제 닷패드에서는 이 점들이 도톰하게 솟아올라요</div>
+  </div>
+
+  <!-- 게임 UI (게임 화면일 때만 보임) -->
+  <div class="game-ui" id="game-ui" aria-label="게임 조작 및 상태">
+
+    <!-- 상태 바 -->
+    <div class="status-row">
+      <div class="stat-item">
+        <div class="stat-label">🍖 배고픔</div>
+        <div class="stat-bar"><div class="stat-fill hunger" id="sf-hunger" style="width:70%"></div></div>
+        <div class="stat-val" id="sv-hunger">보통이에요</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">😊 기분</div>
+        <div class="stat-bar"><div class="stat-fill mood" id="sf-mood" style="width:80%"></div></div>
+        <div class="stat-val" id="sv-mood">행복해요</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">⚡ 에너지</div>
+        <div class="stat-bar"><div class="stat-fill energy" id="sf-energy" style="width:90%"></div></div>
+        <div class="stat-val" id="sv-energy">활발해요</div>
+      </div>
+    </div>
+
+    <!-- 액션 버튼 -->
+    <div class="action-grid">
+      <button id="act-feed"   class="act-btn act-feed"   onclick="doAction('feed')"
+        aria-label="먹이주기. 강아지가 먹이를 향해 이동합니다.">
+        <span class="emo">🍖</span>먹이주기<span class="sub">배고픔 ↓</span></button>
+      <button id="act-stroke" class="act-btn act-stroke" onclick="doAction('stroke')"
+        aria-label="쓰다듬기. 부드러운 물결이 느껴집니다.">
+        <span class="emo">🤚</span>쓰다듬기<span class="sub">기분 ↑</span></button>
+      <button id="act-play"   class="act-btn act-play"   onclick="doAction('play')"
+        aria-label="놀아주기. 공이 등장하고 강아지가 달려갑니다.">
+        <span class="emo">🎾</span>놀아주기<span class="sub">기분 ↑↑</span></button>
+      <button id="act-sleep"  class="act-btn act-sleep"  onclick="doAction('sleep')"
+        aria-label="쉬게하기. 강아지가 편안히 쉽니다.">
+        <span class="emo">🌙</span>쉬게하기<span class="sub">에너지 ↑</span></button>
+    </div>
+
+    <!-- 메시지 배너 -->
+    <div class="banner" id="banner" role="status" aria-live="polite">초코가 기다리고 있어요!</div>
+
+    <!-- 키보드 힌트 -->
+    <div class="key-hint" aria-hidden="true">
+      <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> 이동 &nbsp;
+      <kbd>1</kbd>먹이 <kbd>2</kbd>쓰다듬기 <kbd>3</kbd>놀기 <kbd>4</kbd>쉬기
+      <kbd>Space</kbd>깨우기
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+"use strict";
+/*
+ * =====================================================================
+ * DOT PET — 완전 구현
+ * 스크린: 오프닝 → 연결 → 게임
+ * 펫 이동: 패닝키 → 한 칸씩 부드러운 걷기 애니메이션
+ * =====================================================================
+ *
+ * [Dot Pad SDK 연동 구조]
+ * interface DotPadSDK {
+ *   displayFrame(data: Uint8Array): void; // 300bytes, 60×40 bits
+ *   onButtonPress(cb: (key:'L1'|'L2'|'R1'|'R2'|'UP'|'DOWN') => void): void;
+ *   onDisconnect(cb:()=>void): void;
+ * }
+ * // 버튼 매핑: L1←이동  R1→이동  L2↑이동  R2↓이동
+ * // 패닝키 + 긴 누름: 먹이(R1 1s) / 쓰다듬기(L1 1s)
+ * // 오프닝: L1+R1 동시 1s → 시작
+ *
+ * function encodeFrame(lit:Uint8Array):Uint8Array {
+ *   const b=new Uint8Array(300);
+ *   for(let i=0;i<2400;i++) if(lit[i]) b[i>>3]|=0x80>>(i&7);
+ *   return b; }
+ */
+
+/* ══ 그리드 ══ */
+const C=60,R=40,N=C*R;
+const padEl=document.getElementById('pad');
+const cellEl=new Array(N);
+const litBuf=new Uint8Array(N);
+{const f=document.createDocumentFragment();
+ for(let i=0;i<N;i++){const d=document.createElement('div');d.className='dot';f.appendChild(d);cellEl[i]=d;}
+ padEl.appendChild(f);}
+
+function renderFrame(g){
+  for(let i=0;i<N;i++) if(g[i]!==litBuf[i]){cellEl[i].classList.toggle('on',g[i]===1);litBuf[i]=g[i];}
+}
+
+/* ══ 드로잉 프리미티브 ══ */
+function mk(g){return(x,y)=>{x=x|0;y=y|0;if(x>=0&&x<C&&y>=0&&y<R)g[y*C+x]=1;};}
+function ell(g,cx,cy,rx,ry){
+  const set=mk(g);
+  for(let y=Math.floor(cy-ry);y<=Math.ceil(cy+ry);y++)
+    for(let x=Math.floor(cx-rx);x<=Math.ceil(cx+rx);x++)
+      if(((x-cx)/rx)**2+((y-cy)/ry)**2<=1)set(x,y);
+}
+function lineD(g,x0,y0,x1,y1){
+  const set=mk(g);
+  x0=x0|0;y0=y0|0;x1=x1|0;y1=y1|0;
+  let dx=Math.abs(x1-x0),dy=Math.abs(y1-y0),sx=x0<x1?1:-1,sy=y0<y1?1:-1,e=dx-dy;
+  while(true){set(x0,y0);if(x0===x1&&y0===y1)break;const e2=2*e;if(e2>-dy){e-=dy;x0+=sx;}if(e2<dx){e+=dx;y0+=sy;}}
+}
+function ring(g,cx,cy,r,step=0.2){
+  const set=mk(g);
+  for(let a=0;a<Math.PI*2;a+=step)set(cx+Math.cos(a)*r,cy+Math.sin(a)*r);
+}
+function triF(g,x1,y1,x2,y2,x3,y3){
+  const set=mk(g);
+  const mn=Math.floor(Math.min(y1,y2,y3)),mx=Math.ceil(Math.max(y1,y2,y3));
+  for(let y=mn;y<=mx;y++){
+    const xs=[];
+    [[x1,y1,x2,y2],[x2,y2,x3,y3],[x3,y3,x1,y1]].forEach(([ax,ay,bx,by])=>{
+      if((ay<=y&&by>y)||(by<=y&&ay>y))xs.push(ax+(bx-ax)*(y-ay)/(by-ay));
+    });
+    if(xs.length>=2)for(let x=Math.floor(Math.min(...xs));x<=Math.ceil(Math.max(...xs));x++)set(x,y);
+  }
+}
+
+/* ══ 비트맵 폰트 (3×5, 2× 스케일) ══
+   각 glyph = [[col,row]...] in 3×5 grid → 2×2 블록으로 렌더링
+   결과: 6×10 dots per char, gap 2 → 8 cells/char
+   "DOT PET" (7chars + space): 22 + 4 + 22 = 48 → x_start=(60-48)/2=6 */
+const GF={
+  D:[[0,0],[1,0],[0,1],[2,1],[0,2],[2,2],[0,3],[2,3],[0,4],[1,4]],
+  O:[[1,0],[0,1],[2,1],[0,2],[2,2],[0,3],[2,3],[1,4]],
+  T:[[0,0],[1,0],[2,0],[1,1],[1,2],[1,3],[1,4]],
+  P:[[0,0],[1,0],[0,1],[2,1],[0,2],[1,2],[0,3],[0,4]],
+  E:[[0,0],[1,0],[2,0],[0,1],[0,2],[1,2],[0,3],[0,4],[1,4],[2,4]],
+};
+function glyphAt(g,ch,sx,sy,progress=1){
+  const pts=GF[ch];if(!pts)return;
+  const set=mk(g);
+  const n=Math.ceil(pts.length*Math.max(0,Math.min(1,progress)));
+  for(let i=0;i<n;i++){
+    const[dx,dy]=pts[i];
+    const x=sx+dx*2,y=sy+dy*2;
+    set(x,y);set(x+1,y);set(x,y+1);set(x+1,y+1);
+  }
+}
+// "DOT PET" layout: D@6 O@14 T@22  P@34 E@42 T@50  y=5
+const TITLE=[['D',6],['O',14],['T',22],['P',34],['E',42],['T',50]];
+function drawTitle(g,progress=1){
+  TITLE.forEach(([ch,x],i)=>{
+    const tp=(progress*TITLE.length-i);
+    glyphAt(g,ch,x,5,tp);
+  });
+}
+
+/* ══ 강아지 (좌우 반전 지원) ══ */
+function drawDog(g,cx,cy,opts={}){
+  const{walkPhase=0,facingLeft=false,action='idle',actionTime=0,mood=80,sleeping=false}=opts;
+  cx=Math.round(cx);cy=Math.round(cy);
+
+  /* facing transformer: flip x around cx when facingLeft */
+  const fx=facingLeft?(x=>2*cx-x):(x=>x);
+  const set=mk(g);
+  const S=(x,y)=>set(fx(x),y);
+
+  if(sleeping){
+    /* 웅크린 자세 */
+    ell(g,cx,cy+2,9,4);
+    ell(g,cx-7,cy,4.5,3.5);
+    /* Z 패턴 */
+    const zo=Math.round(((actionTime*.7)%1)*5);
+    const zx=cx+3,zy=cy-5-zo;
+    if(zy>0){[[-1,0],[0,0],[1,0],[1,1],[0,2],[-1,2]].forEach(([dx,dy])=>set(zx+dx,zy+dy));}
+    return;
+  }
+
+  /* 걷기 다리 진동 */
+  const wRad=walkPhase*Math.PI*2;
+  const legSwing=[Math.sin(wRad),Math.sin(wRad+Math.PI),Math.sin(wRad+Math.PI*.5),Math.sin(wRad+Math.PI*1.5)];
+  const bounce=action==='walk'?Math.abs(Math.sin(walkPhase*Math.PI*2))*.8:0;
+  const bodyY=cy+Math.round(bounce);
+
+  /* 몸통 */
+  ell(g,cx,bodyY+2,9,5);
+  /* 머리 (움직임 방향 기준 앞) */
+  const hx=cx+8,hcy=bodyY-3;
+  ell(g,fx(hx),hcy,5.5,5);
+  /* 귀 (기분에 따라) */
+  const earDrop=mood<40?2:0;
+  ell(g,fx(hx-2),hcy-5+earDrop,2.5,2.5);
+  ell(g,fx(hx+2),hcy-5+earDrop,2.5,2.5);
+  /* 주둥이 */
+  ell(g,fx(hx+2),hcy,3,2);
+  /* 눈 */
+  S(hx,hcy-4);
+  /* 꼬리 흔들기 */
+  const wagAmt=action==='happy'||action==='stroke'?5:mood>60?3:1;
+  const wagPhase=Math.sin(actionTime*(action==='happy'?9:4))*wagAmt;
+  for(let i=0;i<6;i++){
+    const t=i/5;
+    S(Math.round(cx-10-t*3),Math.round(bodyY+2-wagPhase*Math.sin(t*Math.PI*.8)));
+  }
+  /* 다리 4개 */
+  [[cx+4,bodyY+7],[cx+2,bodyY+7],[cx-3,bodyY+7],[cx-5,bodyY+7]].forEach(([lx,ly],i)=>{
+    const sw=Math.round(legSwing[i]*2);
+    S(lx,ly+sw);S(lx,ly+sw+1);S(lx,ly+sw+2);
+  });
+
+  /* 먹기 동작: 머리 앞뒤 */
+  if(action==='eat'){
+    const bite=Math.sin(actionTime*8)*2;
+    set(fx(cx+12),Math.round(hcy+bite));
+    set(fx(cx+13),Math.round(hcy+bite));
+  }
+}
+
+/* ══ 오브젝트 ══ */
+function drawFood(g,fx,fy){
+  /* 그릇 모양 */
+  const set=mk(g);
+  for(let x=fx-5;x<=fx+5;x++) if(((x-fx)/5)**2<=1){set(x,fy+3);set(x,fy+4);}
+  ell(g,fx,fy,5,3);
+  set(fx-1,fy-1);set(fx,fy-1);set(fx+1,fy-1); /* 먹이 점 */
+}
+function drawBall(g,bx,by){
+  const set=mk(g);
+  ring(g,bx,by,4,0.25);
+  lineD(g,bx-2,by,bx+2,by);lineD(g,bx,by-2,bx,by+2);
+}
+function drawWave(g,cx,cy,t){
+  const r=(t*12)%20;
+  ring(g,cx,cy,r,0.25);
+  if(r>5)ring(g,cx,cy,r-5,0.3);
+}
+function drawSleepBubble(g,cx,cy,t){
+  /* 물방울 모양 올라가는 ZZZ */
+  const set=mk(g);
+  for(let i=0;i<3;i++){
+    const phase=((t*.4)+i/3)%1;
+    const bx=cx+6+i*5,by=cy-3-Math.round(phase*12);
+    set(bx,by);set(bx+1,by);
+  }
+}
+function drawToy(g,tx,ty,t){
+  const bob=Math.sin(t*3)*2;
+  drawBall(g,tx,Math.round(ty+bob));
+}
+
+/* ══ 오프닝 dot 애니메이션 ══ */
+function buildOpeningFrame(g,t){
+  /* 1. 별 필드 서서히 등장 (0-0.8s) */
+  const stars=[[5,8],[10,14],[17,5],[22,18],[28,12],[38,7],[45,16],[52,10],[57,20],[8,28],[15,33],[35,30],[50,36],[25,36]];
+  const sfade=Math.min(t/0.8,1);
+  stars.forEach(([x,y],i)=>{if(t>i*.05){const set=mk(g);set(x,y);}});
+  /* 2. 타이틀 등장 (0.5-2.2s) */
+  const tp=(t-0.5)/1.7;
+  if(tp>0)drawTitle(g,tp);
+  /* 3. 강아지 등장 (2.0s~) */
+  if(t>2.0){
+    const dt=t-2.0;
+    const wag=Math.sin(dt*4)*.5;
+    const bounce=Math.abs(Math.sin(dt*3))*1.5;
+    const action=dt>2?'happy':'idle';
+    drawDog(g,30,Math.round(28-bounce),{walkPhase:dt*.3,facingLeft:false,action,actionTime:dt,mood:90});
+  }
+}
+
+/* ══ 연결 애니메이션 ══ */
+function buildConnectFrame(g,t){
+  const set=mk(g);
+  drawTitle(g,1);
+  /* 스캔 라인 */
+  const scanX=Math.round((t*30)%C);
+  for(let y=15;y<35;y++) set(scanX,y);
+  if(t>1.5&&dpState==='connected'){
+    /* 연결 완료 방사 */
+    const r=(t-1.5)*20;
+    ring(g,30,25,Math.min(r,20),0.2);
+    drawDog(g,30,28,{facingLeft:false,action:'happy',actionTime:t-1.5,mood:95});
+  } else if(t>0.5){
+    /* 펫 대기 */
+    drawDog(g,30,28,{walkPhase:0,facingLeft:false,action:'idle',actionTime:t,mood:75});
+  }
+}
+
+/* ══ 펫 상태 ══ */
+const pet={
+  x:30,y:22,tx:30,ty:22,
+  walkPhase:0,facingLeft:false,moving:false,
+  action:'idle',actionTime:0,
+  hunger:70,mood:80,energy:90,
+  foodX:-1,foodY:-1,
+  toyX:-1,toyY:-1,toyVX:2,toyVY:1,
+};
+const clamp=(v,lo=0,hi=100)=>Math.max(lo,Math.min(hi,v));
+
+/* ══ 게임 프레임 빌더 ══ */
+function buildGameFrame(g,dt){
+  /* 1. 펫 위치 업데이트 */
+  const dx=pet.tx-pet.x,dy=pet.ty-pet.y;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist>0.3){
+    pet.moving=true;
+    const SPEED=9; // cells/s
+    const move=Math.min(SPEED*dt,dist);
+    pet.x+=dx/dist*move; pet.y+=dy/dist*move;
+    pet.walkPhase=(pet.walkPhase+dt*5)%1;
+    pet.facingLeft=dx<0;
+    if(pet.action!=='eat'&&pet.action!=='stroke'&&pet.action!=='play')
+      pet.action='walk';
+  } else {
+    pet.moving=false;
+    pet.x=pet.tx;pet.y=pet.ty;
+    if(pet.action==='walk')pet.action='idle';
+  }
+  pet.actionTime+=dt;
+
+  /* 2. 먹기 처리 */
+  if(pet.foodX>=0){
+    const fdx=pet.foodX-pet.x,fdy=pet.foodY-pet.y;
+    if(Math.sqrt(fdx*fdx+fdy*fdy)<5){
+      /* 도달 → 먹기 애니메이션 */
+      pet.action='eat';
+      if(pet.actionTime>2.5){
+        pet.hunger=clamp(pet.hunger-28);
+        pet.mood=clamp(pet.mood+8);
+        pet.foodX=-1;pet.foodY=-1;
+        pet.action='happy';pet.actionTime=0;
+        say('맛있게 먹었어요! 배가 찼어요 🍖');
+        updateUI();
+      }
+    }
+  }
+
+  /* 3. 놀이 처리 */
+  if(pet.toyX>=0&&pet.action==='play'){
+    /* 장난감이 자동으로 움직임 */
+    pet.toyX+=pet.toyVX*dt*8;
+    pet.toyY+=pet.toyVY*dt*5;
+    if(pet.toyX<5||pet.toyX>54)pet.toyVX*=-1;
+    if(pet.toyY<5||pet.toyY>34)pet.toyVY*=-1;
+    /* 펫이 장난감 쫓기 */
+    const tx=pet.toyX-5*(pet.facingLeft?-1:1);
+    const ty=pet.toyY;
+    pet.tx=clamp(Math.round(tx),5,54);
+    pet.ty=clamp(Math.round(ty),5,33);
+    /* 근접 시 잡기 */
+    const tdx=pet.toyX-pet.x,tdy=pet.toyY-pet.y;
+    if(Math.sqrt(tdx*tdx+tdy*tdy)<4&&pet.actionTime>2){
+      pet.mood=clamp(pet.mood+15);pet.energy=clamp(pet.energy-20);
+      pet.toyX=-1;pet.toyY=-1;
+      pet.action='happy';pet.actionTime=0;
+      say('와! 공을 잡았어요! 신나게 놀았어요 🎾');
+      updateUI();
+    }
+  }
+
+  /* 4. 프레임 그리기 */
+  const fr=new Uint8Array(N);
+  /* 파동 효과 */
+  if(pet.action==='stroke'&&pet.actionTime<3)drawWave(fr,Math.round(pet.x),Math.round(pet.y),pet.actionTime);
+  /* Z 수면 */
+  if(pet.action==='sleep')drawSleepBubble(fr,Math.round(pet.x),Math.round(pet.y),pet.actionTime);
+  /* 음식 */
+  if(pet.foodX>=0)drawFood(fr,Math.round(pet.foodX),Math.round(pet.foodY));
+  /* 장난감 */
+  if(pet.toyX>=0)drawToy(fr,Math.round(pet.toyX),Math.round(pet.toyY),screenTime);
+  /* 펫 */
+  drawDog(fr,Math.round(pet.x),Math.round(pet.y),{
+    walkPhase:pet.walkPhase,facingLeft:pet.facingLeft,
+    action:pet.action,actionTime:pet.actionTime,
+    mood:pet.mood,sleeping:pet.action==='sleep',
+  });
+  return fr;
+}
+
+/* ══ 스크린 관리 ══ */
+let CUR='opening'; // opening | connecting | game
+let screenTime=0;
+let prevNow=0;
+
+/* 트랜지션 */
+let trans=null; // {from,to,start,dur}
+function goTo(screen,transitionDur=0.5){
+  trans={from:CUR,to:screen,start:screenTime,dur:transitionDur};
+}
+
+function setScreen(s){
+  CUR=s;screenTime=0;
+  document.getElementById('ov-opening').classList.toggle('hidden',s!=='opening');
+  document.getElementById('ov-connect').classList.toggle('hidden',s!=='connecting');
+  document.getElementById('game-ui').classList.toggle('visible',s==='game');
+  if(s==='game'){
+    setTimeout(()=>say('초코가 기다리고 있어요! 방향키로 움직여봐요.'),500);
+    updateUI();
+  }
+}
+
+function startGame(){setScreen('game');}
+/* goConnect → 아래 showBTGuide 포함 버전으로 대체됨 */
+
+/* ══ 메인 루프 ══ */
+function loop(now){
+  const dt=Math.min((now-prevNow)/1000,.05);
+  prevNow=now;
+  screenTime+=dt;
+
+  /* 트랜지션 처리 */
+  if(trans){
+    const p=(screenTime-trans.start)/trans.dur;
+    if(p>=1){setScreen(trans.to);trans=null;}
+  }
+
+  let g;
+  if(CUR==='opening'){
+    g=new Uint8Array(N);buildOpeningFrame(g,screenTime);
+  } else if(CUR==='connecting'){
+    g=new Uint8Array(N);buildConnectFrame(g,screenTime);
+  } else { // game
+    g=buildGameFrame(g,dt);
+  }
+  if(g){renderFrame(g);sendToDotPad(g);}
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(t=>{prevNow=t;loop(t);});
+
+/* ══ 액션 ══ */
+function doAction(act){
+  if(CUR!=='game')return;
+  const was=pet.action;
+  pet.actionTime=0;
+
+  switch(act){
+    case'feed':
+      if(pet.action==='sleep'){wakeUp();return;}
+      /* 먹이를 펫과 반대 방향에 배치 */
+      const fx=pet.x>30?10:49;
+      pet.foodX=fx;pet.foodY=pet.y;
+      pet.tx=clamp(Math.round(fx),5,54);
+      pet.ty=pet.y;
+      pet.action='eat';pet.actionTime=0;
+      say('먹이가 나타났어요! 초코가 달려가요 🍖');
+      break;
+    case'stroke':
+      if(pet.action==='sleep'){wakeUp();return;}
+      pet.action='stroke';
+      pet.actionTime=0;
+      pet.mood=clamp(pet.mood+12);
+      pet.energy=clamp(pet.energy-3);
+      say('부드러운 손길에 초코가 기뻐해요 🤚');
+      setTimeout(()=>{if(pet.action==='stroke'){pet.action='happy';pet.actionTime=0;}},3000);
+      updateUI();
+      break;
+    case'play':
+      if(pet.action==='sleep'){wakeUp();return;}
+      pet.toyX=pet.x>30?48:12;
+      pet.toyY=pet.y;
+      pet.toyVX=(pet.x>30?-1:1)*2;
+      pet.toyVY=1;
+      pet.action='play';pet.actionTime=0;
+      say('공이 등장했어요! 초코가 쫓아가요 🎾');
+      break;
+    case'sleep':
+      if(pet.action==='sleep'){wakeUp();return;}
+      pet.action='sleep';pet.actionTime=0;
+      pet.tx=pet.x;pet.ty=pet.y;
+      pet.energy=clamp(pet.energy+25);
+      pet.mood=clamp(pet.mood+6);
+      say('초코가 편안히 쉬고 있어요 🌙 (Space로 깨우기)');
+      updateUI();
+      break;
+  }
+  highlightBtn(act);
+}
+
+function wakeUp(){
+  if(pet.action==='sleep'){
+    pet.action='idle';pet.actionTime=0;
+    say('초코가 기지개를 켜며 일어났어요!');
+  }
+}
+
+function highlightBtn(act){
+  document.querySelectorAll('.act-btn').forEach(b=>b.classList.remove('active'));
+  const el=document.getElementById('act-'+act);
+  if(el){el.classList.add('active');setTimeout(()=>el.classList.remove('active'),600);}
+}
+
+/* ══ 상태 감소 ══ */
+setInterval(()=>{
+  if(CUR!=='game')return;
+  const dec=pet.action==='sleep'?0.5:1;
+  pet.hunger=clamp(pet.hunger+5*dec);
+  pet.energy=clamp(pet.energy-2*dec);
+  pet.mood=clamp(pet.mood-2*dec);
+  if(pet.hunger>=80)say('초코가 배가 고파 보여요! 먹이를 줘요 🍖');
+  else if(pet.energy<=15)say('초코가 많이 피곤해 보여요. 쉬게 해주세요 🌙');
+  updateUI();
+},12000);
+
+/* ══ UI 업데이트 ══ */
+function say(txt){const el=document.getElementById('banner');if(el)el.textContent=txt;}
+function moodW(v){return v>=80?'아주 행복해요':v>=60?'기분 좋아요':v>=40?'보통이에요':v>=20?'시무룩해요':'우울해요';}
+function hungerW(v){return v>=80?'많이 배고파요':v>=60?'배가 고파요':v>=40?'조금 배고파요':v>=20?'적당해요':'배불러요';}
+function energyW(v){return v>=80?'활발해요':v>=60?'보통이에요':v>=40?'조금 피곤해요':v>=20?'피곤해요':'기진맥진해요';}
+function updateUI(){
+  document.getElementById('sf-hunger').style.width=pet.hunger+'%';
+  document.getElementById('sf-mood').style.width=pet.mood+'%';
+  document.getElementById('sf-energy').style.width=pet.energy+'%';
+  document.getElementById('sv-hunger').textContent=hungerW(pet.hunger)+' · '+Math.round(pet.hunger);
+  document.getElementById('sv-mood').textContent=moodW(pet.mood)+' · '+Math.round(pet.mood);
+  document.getElementById('sv-energy').textContent=energyW(pet.energy)+' · '+Math.round(pet.energy);
+  // 연결 상태 배지는 setDPState()에서 업데이트됨
+}
+
+/* ══ 입력 처리 ══ */
+const STEP=4; // 패닝키 1회 이동 칸 수
+function movePet(dx,dy){
+  if(CUR!=='game')return;
+  if(pet.action==='sleep'){wakeUp();return;}
+  pet.tx=clamp(pet.tx+dx,5,54);
+  pet.ty=clamp(pet.ty+dy,5,33);
+  if(pet.action!=='eat'&&pet.action!=='play')pet.action='walk';
+}
+
+document.addEventListener('keydown',e=>{
+  const tag=(document.activeElement?.tagName)||'';
+  if(tag==='INPUT')return;
+  switch(e.key){
+    case'ArrowLeft': e.preventDefault();movePet(-STEP,0);break;
+    case'ArrowRight':e.preventDefault();movePet(+STEP,0);break;
+    case'ArrowUp':   e.preventDefault();movePet(0,-STEP);break;
+    case'ArrowDown': e.preventDefault();movePet(0,+STEP);break;
+    case' ':         e.preventDefault();
+      if(CUR==='opening')startGame();
+      else wakeUp();
+      break;
+    case'Enter':if(CUR==='opening')startGame();break;
+    case'1':doAction('feed');  break;
+    case'2':doAction('stroke');break;
+    case'3':doAction('play');  break;
+    case'4':doAction('sleep'); break;
+  }
+});
+
+/* ══ 설정 ══ */
+// toggleAdv removed
+
+
+/* ══════════════════════════════════════════════════════════════════
+   DOT PAD SDK 공식 연동 레이어
+   SDK: https://github.com/dotincorp/dotpad-sdk-guide/tree/main/Web/1.0.0
+   
+   BLE Service UUID : 49535343-fe7d-4ae5-8fa9-9fafd205e455
+   BLE Char   UUID  : 49535343-1e4d-4bd9-ba61-23c647249616
+   
+   프레임 인코딩 (60×40 → 300 bytes hex):
+     Dot Pad = 30×10 브레일 셀, 각 셀 = 2×4 핀 = 1 byte
+     byteIdx  = (y>>2)*30 + (x>>1)
+     bitOffset = (x&1)*4  + (y&3)
+   
+   패닝키 콜백:  "0"=왼쪽이동  "5"=오른쪽이동
+   기능키 콜백:  "1"=먹이  "2"=쓰다듬기  "3"=놀기  "4"=쉬기
+═══════════════════════════════════════════════════════════════════ */
+
+let dpSDK      = null;   // DotPadSDK 인스턴스
+let dpDevice   = null;   // BluetoothDevice
+let dpState    = 'disconnected';
+let dpSending  = false;
+let dpLastSend = 0;
+const DP_FRAME_INTERVAL = 300; // ms (브레일 ACK 흐름 제어 고려)
+
+/* ── SDK 동적 로드 (페이지 첫 연결 시 1회) ── */
+async function initDotPadSDK() {
+  if (dpSDK) return true;
+  try {
+    connLog('SDK 로드 중...');
+    const src = await fetch(
+      'https://raw.githubusercontent.com/dotincorp/dotpad-sdk-guide/main/Web/1.0.0/DotPadSDK-1.0.0.js'
+    ).then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    });
+    // ES module export 제거 → 일반 스크립트로 삽입
+    const clean = src.replace(/export\s*\{[^}]*\}\s*;?\s*$/, '');
+    const s = document.createElement('script');
+    s.textContent = clean;
+    document.head.appendChild(s);
+    dpSDK = new DotPadSDK();
+    console.log('[DOT PET] SDK 로드 완료 ✓');
+    console.log('  Service UUID  :', dpSDK.DOTPAD_SERVICE);
+    console.log('  Characteristic:', dpSDK.DOTPAD_CHARACTERISTIC);
+    return true;
+  } catch(e) {
+    connLog('SDK 로드 실패: ' + e.message + ' — GitHub 접근이 필요해요.');
+    console.error('[DOT PET] SDK 로드 실패:', e);
+    return false;
+  }
+}
+
+/* ── 연결 ── */
+async function connectDotPad() {
+  /* ① iframe 감지 ─ Web Bluetooth는 최상위 문서에서만 동작 */
+  if (window.self !== window.top) {
+    showBTGuide('iframe');
+    return;
+  }
+  /* ② Web Bluetooth API 존재 확인 */
+  if (!navigator.bluetooth) {
+    showBTGuide('no-api');
+    return;
+  }
+
+  const loaded = await initDotPadSDK();
+  if (!loaded) return;
+
+  setDPState('connecting');
+  connLog('기기를 검색합니다...');
+
+  try {
+    const device = await dpSDK.request();
+    connLog('기기 선택됨: ' + device.name + ' — 연결 중...');
+
+    const connected = await dpSDK.connect(device);
+    if (!connected) throw new Error('GATT 연결 실패');
+    dpDevice = device;
+
+    device.addEventListener('gattserverdisconnected', () => {
+      console.log('[DOT PET] 연결 끊김');
+      dpDevice = null;
+      setDPState('disconnected');
+    });
+
+    await dpSDK.addListenerKeyEvent(device, onDotPadKey);
+    await dpSDK.resetGraphicData(device);
+
+    setDPState('connected');
+    connLog('Dot Pad 연결 완료! 패닝키로 초코를 움직여봐요 🎉');
+
+    const g = new Uint8Array(N);
+    buildCurrentFrame(g);
+    sendToDotPad(g);
+
+  } catch(e) {
+    setDPState('disconnected');
+    if (e.name === 'SecurityError') {
+      /* Permissions Policy 차단 */
+      showBTGuide('security');
+    } else if (e.name === 'NotFoundError') {
+      connLog('기기 선택을 취소했어요.');
+    } else {
+      connLog('연결 실패: ' + e.message);
+      console.error('[DOT PET] 연결 오류:', e);
+    }
+  }
+}
+
+/* ── 연결 해제 ── */
+async function disconnectDotPad() {
+  if (dpDevice) {
+    try { await dpSDK.disconnect(dpDevice); } catch(e) {}
+    dpDevice = null;
+  }
+  setDPState('disconnected');
+  connLog('연결을 해제했어요.');
+}
+
+/* ── 패닝키 / 기능키 → 게임 액션 ── */
+function onDotPadKey(key) {
+  console.log('[DOT PET] 패드 키:', key);
+  switch(key) {
+    case '0': movePet(-STEP, 0);   break; // 왼쪽 패닝키 → 왼쪽 이동
+    case '5': movePet(+STEP, 0);   break; // 오른쪽 패닝키 → 오른쪽 이동
+    case '1': doAction('feed');    break; // F1 → 먹이주기
+    case '2': doAction('stroke');  break; // F2 → 쓰다듬기
+    case '3': doAction('play');    break; // F3 → 놀아주기
+    case '4': doAction('sleep');   break; // F4 → 쉬게하기
+  }
+}
+
+/* ── 프레임 인코딩
+   60×40 litArray → 300 bytes hex string (브레일 셀 기반)
+   셀 레이아웃: 30열×10행, 각 셀 2열×4행 핀
+   byte[i] = 셀(i%30, i/30) → bit j = 핀((i%30)*2+j/4, (i/30)*4+j%4) ── */
+function litToHex(litArray) {
+  const bytes = new Uint8Array(300);
+  for (let i = 0; i < N; i++) {
+    if (!litArray[i]) continue;
+    const x = i % C, y = (i / C) | 0;
+    // byteIdx: 셀 행(y>>2) × 30열 + 셀 열(x>>1)
+    // bitOffset: 셀 내 x방향(x&1) × 4 + 셀 내 y방향(y&3)
+    bytes[(y >> 2) * 30 + (x >> 1)] |= 1 << ((x & 1) * 4 + (y & 3));
+  }
+  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* ── 닷패드로 프레임 전송 (ACK 흐름 제어 + 속도 제한) ── */
+function sendToDotPad(g) {
+  if (!dpDevice || !dpSDK || dpState !== 'connected') return;
+  const now = performance.now();
+  if (dpSending || now - dpLastSend < DP_FRAME_INTERVAL) return;
+  dpSending = true;
+  dpLastSend = now;
+  dpSDK.displayGraphicData(dpDevice, litToHex(g))
+    .catch(e => {
+      console.warn('[DOT PET] 전송 오류:', e.message);
+      if (e.message?.match(/disconnect|not connected|GATT/i)) setDPState('disconnected');
+    })
+    .finally(() => { dpSending = false; });
+}
+
+/* ── UI 상태 갱신 ── */
+function setDPState(s) {
+  dpState = s;
+  const pill   = document.getElementById('top-conn');
+  const box    = document.getElementById('conn-box');
+  const btnCon = document.getElementById('btn-ble-connect');
+  const btnDis = document.getElementById('btn-ble-disconnect');
+  const labels = {
+    disconnected: '미연결',
+    connecting:   '연결 중...',
+    connected:    '연결됨 ✓',
+  };
+  if (pill) { pill.textContent = labels[s] || s;
+    pill.className = 'conn-pill' + (s==='connected'?' connected':s==='connecting'?' connecting':''); }
+  if (box)  box.textContent = {
+    disconnected: '연결 전',
+    connecting:   '블루투스 기기 검색 중...',
+    connected:    'Dot Pad 연결 완료 ✓  (' + (dpDevice?.name||'') + ')',
+  }[s] || s;
+  if (btnCon) btnCon.style.display = s==='connected' ? 'none' : '';
+  if (btnDis) btnDis.style.display = s==='connected' ? ''     : 'none';
+  if (s === 'connected') {
+    say('Dot Pad 연결됐어요! 패닝키로 초코를 움직여봐요 🎉');
+    updateUI();
+  }
+}
+
+/* ── 블루투스 사용 안내 (상황별) ── */
+function showBTGuide(reason) {
+  const box = document.getElementById('conn-box');
+  if (!box) return;
+
+  const reasons = {
+    'iframe': {
+      icon: '🔒',
+      title: 'iframe 내에서는 블루투스를 사용할 수 없어요',
+      desc:  'Claude 아티팩트 미리보기, CodePen, JSFiddle 등 iframe 환경은 브라우저 보안 정책으로 Web Bluetooth가 차단돼요.',
+    },
+    'security': {
+      icon: '🔒',
+      title: '보안 정책으로 블루투스가 차단됐어요',
+      desc:  '현재 페이지가 iframe 안에 삽입되어 있거나 HTTP(비보안) 환경일 수 있어요.',
+    },
+    'no-api': {
+      icon: '⚠️',
+      title: 'Web Bluetooth를 지원하지 않는 브라우저예요',
+      desc:  'Chrome 또는 Edge (데스크톱) 에서 실행해주세요. Firefox·Safari는 미지원이에요.',
+    },
+  };
+
+  const r = reasons[reason] || reasons['security'];
+
+  box.innerHTML = `
+    <div style="text-align:left;line-height:1.9;font-size:13px;">
+      <div style="font-size:15px;font-weight:700;color:#f0d070;margin-bottom:6px;">
+        ${r.icon} ${r.title}
+      </div>
+      <div style="color:#a09070;margin-bottom:10px;">${r.desc}</div>
+      <div style="color:#f0e8d8;font-weight:700;margin-bottom:4px;">✅ 해결 방법</div>
+      <ol style="margin:0;padding-left:18px;color:#c0b090;line-height:2;">
+        <li>이 파일을 <strong style="color:#f0e8d8;">다운로드</strong> 하세요</li>
+        <li><strong style="color:#f0e8d8;">Chrome 또는 Edge</strong> 에서 직접 여세요</li>
+        <li>또는 <strong style="color:#c89030;">GitHub Pages</strong>에 올려서 HTTPS로 접속하세요</li>
+      </ol>
+      <div style="margin-top:10px;padding:8px 10px;background:#13100d;border-radius:8px;
+                  border-left:3px solid #c89030;font-size:12px;color:#7a6550;">
+        💡 GitHub Pages 배포 예시<br>
+        <code style="color:#c89030;">git add dot-pet.html</code><br>
+        <code style="color:#c89030;">git commit -m "feat: DOT PET"</code><br>
+        <code style="color:#c89030;">git push origin main</code><br>
+        그 후 <code style="color:#c89030;">https://byeol-coder.github.io/dotpet/dot-pet.html</code>
+      </div>
+    </div>
+  `;
+}
+
+/* ── goConnect 시 iframe 사전 경고 ── */
+function goConnect() {
+  setScreen('connecting');
+  if (window.self !== window.top) {
+    setTimeout(() => showBTGuide('iframe'), 100);
+  }
+}
+
+function connLog(m) {
+  const el = document.getElementById('conn-box');
+  if (el) el.textContent = m;
+}
+function buildCurrentFrame(g) {
+  if (CUR === 'opening')    buildOpeningFrame(g, screenTime);
+  else if (CUR === 'connecting') buildConnectFrame(g, screenTime);
+  else buildGameFrame(g, 0); // dt=0 (업데이트 없이 현재 상태만)
+}
+
+
+/* ══ 부팅 ══ */
+setScreen('opening');
+setTimeout(()=>{
+  document.getElementById('ov-opening').querySelector('h1').focus?.();
+},200);
+</script>
+</body>
+</html>
